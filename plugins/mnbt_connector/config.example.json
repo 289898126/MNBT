@@ -1,0 +1,16 @@
+{
+  "mnbt_url": "https://your-mnbt.example.com",
+  "platform_secret": "MNBT_CONFIG_API_VALUE",
+  "node_id": "node_xxxxxxxxxxxxxxxxxxxxxxxx",
+  "node_secret": "replace-with-node-secret",
+  "node_name": "default-node",
+  "version": "0.1.0",
+  "interval_seconds": 10,
+  "capabilities": [
+    "heartbeat",
+    "task",
+    "report",
+    "forbidden_scan",
+    "site_stats"
+  ]
+}

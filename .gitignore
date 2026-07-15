@@ -1,0 +1,47 @@
+# 安装锁定
+install/install.lock
+
+# 配置文件
+config.php
+.env
+*.local.php
+
+# 日志文件
+*.log
+runtime/logs/
+plugins/wwwlogs/
+runtime/cache/
+runtime/temp/
+
+# 临时文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 备份文件
+*.sql.bak
+*.sql~
+backup/
+*.tar.gz
+*.zip
+
+# 上传文件
+filecx/uploads/
+runtime/upload/
+
+# 依赖目录
+mail/vendor/composer/installed.json
+
+# 测试文件
+_run_test.php
+admin/_debug_*.php
+
+# 文档备份
+admin/mnbt/*.docx
+admin/mnbt/*.zip

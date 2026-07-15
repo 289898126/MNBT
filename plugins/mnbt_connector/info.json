@@ -1,0 +1,9 @@
+{
+  "title": "MNBT Connector",
+  "name": "mnbt_connector",
+  "ps": "MNBT 节点连接器 - 违禁词扫描 + 站点访问统计",
+  "versions": "0.2.0",
+  "checks": "/www/server/panel/plugin/mnbt_connector",
+  "author": "MNBT",
+  "home": "https://mnbt.local"
+}

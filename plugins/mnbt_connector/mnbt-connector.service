@@ -1,0 +1,14 @@
+[Unit]
+Description=MNBT Connector Worker
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/www/server/panel/plugin/mnbt_connector
+ExecStart=/www/server/panel/plugin/mnbt_connector/worker.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

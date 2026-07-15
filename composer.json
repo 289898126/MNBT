@@ -1,0 +1,12 @@
+{
+    "name": "mnbt/mnbt",
+    "description": "梦奈宝塔主机系统 (MNBT)",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "config": {
+        "vendor-dir": "mail/vendor"
+    }
+}

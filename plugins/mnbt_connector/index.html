@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MNBT Connector 管理面板</title>
+<style>
+:root {
+  --green: #36b370; --green-light: #e3f1ea; --green-hover: #ecf7f1;
+  --red: #e54545; --orange: #e6a23c; --blue: #409eff;
+  --t1: #333; --t2: #666; --t3: #888; --t4: #bbb;
+  --bg: #fff; --bg-gray: #f5f7fa; --bd: #e5e7eb; --bd-light: #f0f0f0;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.03); --shadow-hover: 0 2px 8px rgba(0,0,0,.06);
+  --r: 6px; --r-sm: 4px; --tr: .2s ease;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;color:var(--t1);background:var(--bg);}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}::-webkit-scrollbar-track{background:transparent}
+
+.bt-w-main{width:1000px;height:820px;display:flex;background:var(--bg);overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:120px;min-width:120px;background:var(--bg-gray);display:flex;flex-direction:column;border-right:1px solid var(--bd)}
+.sidebar-item{display:flex;align-items:center;height:44px;padding:0 18px;cursor:pointer;font-size:14px;color:var(--t2);border-left:3px solid transparent;transition:var(--tr)}
+.sidebar-item:hover{color:var(--green);background:var(--green-light)}
+.sidebar-item.active{color:var(--green);background:var(--green-light);border-left-color:var(--green);font-weight:600}
+
+.main{flex:1;overflow-y:auto;min-width:0}
+
+/* ========== Overview ========== */
+.p-ov{padding:20px 22px}
+.ov-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.ov-top-l{display:flex;align-items:center;gap:12px}
+.ov-top-l h2{font-size:18px;font-weight:700;color:var(--t1)}
+.ov-top-r{display:flex;gap:8px}
+.ov-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.ov-card{background:var(--bg);border-radius:var(--r);border:1px solid var(--bd);padding:18px;transition:var(--tr);box-shadow:var(--shadow-sm)}
+.ov-card:hover{box-shadow:var(--shadow-hover)}
+.ov-card .cl{font-size:12px;color:var(--t3);margin-bottom:8px}
+.ov-card .cv{font-size:16px;font-weight:700;color:var(--t1);word-break:break-all}
+.ov-card .cs{font-size:12px;color:var(--t3);margin-top:2px}
+
+.section{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.section-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--bg-gray);border-bottom:1px solid var(--bd);font-size:14px;font-weight:600;color:var(--t1)}
+.section-bd{padding:16px 18px}
+.log-box{background:#fafafa;color:var(--t2);border:1px solid var(--bd);border-radius:var(--r-sm);font-family:"SF Mono","Cascadia Code","Fira Code","Consolas",monospace;font-size:12px;padding:14px;max-height:260px;overflow-y:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot.online{background:var(--green)}.dot.offline{background:var(--red)}
+.dot.breath{animation:breathe 2s infinite}
+@keyframes breathe{0%{box-shadow:0 0 0 0 rgba(54,179,112,.5);transform:scale(1)}70%{box-shadow:0 0 0 8px rgba(54,179,112,0);transform:scale(1.15)}100%{box-shadow:0 0 0 0 rgba(54,179,112,0);transform:scale(1)}}
+.badge{display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-success{background:#f0fdf4;color:#15803d}.badge-danger{background:#fef2f2;color:#dc2626}.badge-warning{background:#fffbeb;color:#d97706}.badge-default{background:#f3f4f6;color:var(--t2)}
+.tag{display:inline-block;padding:3px 10px;border-radius:3px;font-size:11px;background:#f3f4f6;color:var(--t2);margin:1px 3px 1px 0}
+
+/* ========== Stats Page ========== */
+.p-stats,.p-config,.p-logs{padding:14px 20px;display:none}
+.fb{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.fb label{font-size:13px;color:var(--t2);white-space:nowrap}
+.fb select{font-size:13px;padding:6px 30px 6px 12px;border:1px solid var(--bd);border-radius:var(--r-sm);background:var(--bg);color:var(--t1);outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer}
+.fb select:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(54,179,112,.12)}
+.btn-rf{margin-left:auto;font-size:13px;color:var(--green);cursor:pointer;text-decoration:none;padding:6px 16px;border-radius:var(--r-sm);border:1px solid var(--green);background:var(--bg);transition:var(--tr)}
+.btn-rf:hover{background:var(--green-light)}
+
+/* Sub-nav */
+.sub-nav{display:flex;margin-bottom:14px}
+
+/* Glued btns */
+.btns{display:flex}
+.btns-btn{padding:0 16px;height:30px;line-height:29px;cursor:pointer;border:1px solid #dcdfe6;border-radius:0;background:#fff;transition:var(--tr);color:var(--t2);font-size:13px;user-select:none;outline:none;white-space:nowrap}
+.btns-btn:first-child{border-radius:4px 0 0 4px}
+.btns-btn:last-child{border-radius:0 4px 4px 0}
+.btns-btn:not(:last-child){border-right:none}
+.btns-btn:hover{color:var(--green);background:var(--green-hover)}
+.btns-btn.on{color:var(--green);border-color:var(--green);background:var(--green-light);font-weight:600}
+.btns-btn.on+.btns-btn{border-left-color:var(--green)}
+
+/* Skeleton */
+.skel{display:none}
+.skel.show{display:block}
+.skel-row{display:flex;gap:12px;margin-bottom:14px}
+.skel-card{flex:1;height:86px;background:#fff;border:1px solid #e8e8e8;border-radius:var(--r);padding:12px}
+.skel-l1{width:50px;height:11px;background:#e8e8e8;border-radius:3px;animation:skel 1.5s infinite;margin-bottom:9px}
+.skel-l2{width:80px;height:22px;background:#e8e8e8;border-radius:3px;animation:skel 1.5s infinite .15s;margin-bottom:8px}
+.skel-l3{width:96px;height:10px;background:#e8e8e8;border-radius:3px;animation:skel 1.5s infinite .3s}
+.skel-chart{background:#fff;border:1px solid #e8e8e8;border-radius:var(--r);padding:14px;margin-bottom:12px}
+.skel-ch{display:flex;justify-content:space-between;margin-bottom:12px}
+.skel-ct{width:110px;height:14px;background:#e8e8e8;border-radius:3px;animation:skel 1.5s infinite}
+.skel-cts{display:flex;gap:0}
+.skel-ctb{width:46px;height:26px;background:#e8e8e8;border-radius:3px;animation:skel 1.5s infinite .15s;margin-left:-1px;border:1px solid #fff}
+.skel-cbox{width:100%;height:185px;background:#e8e8e8;border-radius:3px;animation:skel 1.5s infinite .3s}
+@keyframes skel{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* Stat cards (overview page only) */
+.stats-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.stat-card{flex:1;min-width:100px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;transition:var(--tr);box-shadow:var(--shadow-sm)}
+.stat-card:hover{box-shadow:var(--shadow-hover)}
+.stat-label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3);margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.stat-comp{font-size:12px;color:var(--t3);line-height:1.5}
+.stat-comp .up{color:var(--green)}.stat-comp .down{color:var(--red)}
+.stat-rf{display:flex;align-items:center;justify-content:center;min-width:50px}
+
+/* Charts (overview page only) */
+.chart-card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.chart-card-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd-light);flex-wrap:wrap;gap:8px}
+.chart-card-hd h3{font-size:15px;font-weight:600;color:var(--t1)}
+.chart-card-bd{padding:12px 12px 8px}
+.chart-box{height:210px}
+
+/* Page panels */
+.pp{display:none}
+.pp.active{display:block}
+
+/* Page header (specialized pages) */
+.pg-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.pg-hd-l{display:flex;align-items:center;gap:10px}
+.pg-hd-l .pg-tip{font-size:11px;color:var(--t3)}
+.pg-hd-r{display:flex;align-items:center;gap:8px}
+.pg-switch{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)}
+.pg-switch input{width:36px;height:22px;appearance:none;background:#ccc;border-radius:11px;position:relative;cursor:pointer;transition:var(--tr);outline:none}
+.pg-switch input:checked{background:var(--green)}
+.pg-switch input:after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:var(--tr)}
+.pg-switch input:checked:after{left:16px}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:9px 12px;text-align:left;font-weight:600;color:var(--t2);background:#fafbfc;border-bottom:1px solid var(--bd);white-space:nowrap;font-size:12px}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--bd-light);color:var(--t1);vertical-align:middle}
+.tbl tbody tr:hover td{background:#f9fafb}
+.empty{text-align:center;padding:40px 0;color:var(--t4);font-size:13px}
+
+/* Footer note */
+.pg-note{margin-top:10px;font-size:12px;color:var(--t3);line-height:1.6}
+.pg-note a{color:var(--green)}
+
+/* Progress */
+.bar-wrap{width:100%;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-top:2px}
+.bar{height:100%;background:var(--green);border-radius:3px;min-width:2px;transition:width .4s ease}
+
+/* Pager */
+.pager{display:flex;align-items:center;justify-content:center;gap:4px;padding:12px 16px;border-top:1px solid var(--bd-light);font-size:13px;color:var(--t2)}
+.pager-btn{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;padding:0 6px;border:1px solid var(--bd);border-radius:var(--r-sm);cursor:pointer;background:#fff;transition:var(--tr);font-size:12px}
+.pager-btn:hover:not(:disabled){border-color:var(--green);color:var(--green);background:var(--green-hover)}
+.pager-btn.on{background:var(--green);color:#fff;border-color:var(--green)}
+.pager-btn:disabled{color:var(--t4);cursor:default;opacity:.5}
+.pager-info{margin:0 4px;color:var(--t3);font-size:12px}
+.pager input{width:42px;height:26px;text-align:center;border:1px solid var(--bd);border-radius:var(--r-sm);font-size:12px;outline:none}
+.pager input:focus{border-color:var(--green)}
+.pager-go{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 10px;border:1px solid var(--green);border-radius:var(--r-sm);cursor:pointer;background:var(--green);color:#fff;font-size:12px;transition:var(--tr)}
+.pager-go:hover{background:#2d9a5e}
+</style>
+</head>
+<body>
+<div class="bt-w-main">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="mnbtSidebar">
+    <div class="sidebar-item active" data-panel="p-ov">概览</div>
+    <div class="sidebar-item" data-panel="p-config">当前配置</div>
+    <div class="sidebar-item" data-panel="p-logs">运行日志</div>
+    <div class="sidebar-item" data-panel="p-stats">站点统计</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="mnbtMain">
+
+    <!-- ==================== 概览 ==================== -->
+    <div class="p-ov" id="p-ov">
+      <div class="ov-top">
+        <div class="ov-top-l"><h2>MNBT 连接器</h2><span class="badge badge-default" id="mnbtVersionBadge">v0.2</span><span id="mnbtStatusBadge" style="display:none;"></span></div>
+        <div class="ov-top-r">
+          <button class="btn btn-success btn-sm" onclick="MNBT.start()">启动</button>
+          <button class="btn btn-danger btn-sm" onclick="MNBT.stop()">停止</button>
+          <button class="btn btn-primary btn-sm" onclick="MNBT.runOnce()">执行一次</button>
+          <button class="btn btn-default btn-sm" onclick="MNBT.status()">刷新</button>
+        </div>
+      </div>
+      <div class="ov-cards">
+        <div class="ov-card"><div class="cl">运行状态</div><div class="cv" id="mnbtCardRunning"><span class="dot offline"></span>检测中...</div></div>
+        <div class="ov-card"><div class="cl">节点 ID</div><div class="cv" id="mnbtCardNodeId">-</div></div>
+        <div class="ov-card"><div class="cl">进程 PID</div><div class="cv" id="mnbtCardPid">-</div><div class="cs" id="mnbtCardPidSub">未运行</div></div>
+        <div class="ov-card"><div class="cl">运行版本</div><div class="cv" id="mnbtCardVersion">-</div></div>
+      </div>
+    </div>
+
+    <!-- ==================== 当前配置 ==================== -->
+    <div class="p-config" id="p-config">
+      <div class="section">
+        <div class="section-hd"><span>当前配置</span><button class="btn btn-default btn-xs" onclick="MNBT.loadConfig()">刷新</button></div>
+        <div class="section-bd">
+          <div class="ov-cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+            <div class="ov-card"><div class="cl">配置文件</div><div class="cv" id="mnbtConfigPath">-</div></div>
+            <div class="ov-card"><div class="cl">节点 ID</div><div class="cv" id="mnbtConfigNodeId">-</div></div>
+            <div class="ov-card"><div class="cl">工作间隔</div><div class="cv" id="mnbtConfigInterval">-</div></div>
+          </div>
+          <div id="mnbtConfigInfo" style="font-size:13px;color:var(--t3);margin-bottom:12px;line-height:1.8">加载中...</div>
+          <pre class="log-box" id="mnbtConfigJson" style="max-height:520px">加载中...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 运行日志 ==================== -->
+    <div class="p-logs" id="p-logs">
+      <div class="section">
+        <div class="section-hd">
+          <span>运行日志</span>
+          <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:var(--t3);font-weight:400">
+            <label style="cursor:pointer"><input type="checkbox" id="mnbtLogAutoRefresh"> 自动刷新</label>
+            <label style="cursor:pointer"><input type="checkbox" id="mnbtAutoScroll" checked> 自动滚动</label>
+            <button class="btn btn-default btn-xs" onclick="MNBT.loadLogs()">刷新</button>
+          </div>
+        </div>
+        <div class="section-bd">
+          <div class="ov-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+            <div class="ov-card"><div class="cl">日志文件</div><div class="cv" id="mnbtLogPath">-</div></div>
+            <div class="ov-card"><div class="cl">日志大小</div><div class="cv" id="mnbtLogSize">-</div></div>
+            <div class="ov-card"><div class="cl">更新时间</div><div class="cv" id="mnbtLogMtime">-</div></div>
+            <div class="ov-card"><div class="cl">进程状态</div><div class="cv" id="mnbtLogRunning">-</div></div>
+          </div>
+          <pre class="log-box" id="mnbtConnectorLog" style="max-height:590px">暂无日志</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 站点统计 ==================== -->
+    <div class="p-stats" id="p-stats">
+
+      <!-- 1.筛选栏 -->
+      <div class="fb">
+        <label>站点</label><select id="ssSiteSelect" onchange="MNBT.reload()" style="min-width:150px;"><option value="">-- 选择站点 --</option></select>
+        <label style="margin-left:4px;">时间</label>
+        <div class="btns" id="rangeBtns"><div class="btns-btn" data-v="today">今日</div><div class="btns-btn" data-v="yesterday">昨日</div><div class="btns-btn on" data-v="7d">近7天</div><div class="btns-btn" data-v="30d">近30天</div></div>
+        <a class="btn-rf" href="javascript:;" onclick="MNBT.reload()">刷新</a>
+      </div>
+
+      <!-- 2.二级导航（8项：概况 + 7专项） -->
+      <div class="sub-nav"><div class="btns" id="subNav">
+        <div class="btns-btn on" onclick="MNBT.switchPage('overview',this)">概况</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('spider',this)">蜘蛛</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('client',this)">客户端</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('method',this)">请求方式</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('iprank',this)">IP 排行</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('urirank',this)">URI 排行</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('errors',this)">错误日志</div>
+        <div class="btns-btn" onclick="MNBT.switchPage('recent',this)">网站日志</div>
+      </div></div>
+
+      <!-- 3.骨架屏 -->
+      <div class="skel" id="ssSkel">
+        <div class="skel-row"><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div><div class="skel-card"><div class="skel-l1"></div><div class="skel-l2"></div><div class="skel-l3"></div></div></div>
+        <div class="skel-chart"><div class="skel-ch"><div class="skel-ct"></div><div class="skel-cts"><div class="skel-ctb"></div><div class="skel-ctb"></div><div class="skel-ctb"></div><div class="skel-ctb"></div><div class="skel-ctb"></div></div></div><div class="skel-cbox"></div></div>
+        <div class="skel-chart"><div class="skel-ch"><div class="skel-ct"></div><div class="skel-cts"><div class="skel-ctb"></div><div class="skel-ctb"></div><div class="skel-ctb"></div><div class="skel-ctb"></div><div class="skel-ctb"></div></div></div><div class="skel-cbox"></div></div>
+      </div>
+
+      <!-- 4.内容区 -->
+      <div id="ssContent" style="display:none;">
+
+        <!-- ====== 概况页 (overview) ====== -->
+        <div class="pp active" id="pp-overview">
+          <div class="stats-row" id="ssStatsCards"></div>
+          <div class="chart-card">
+            <div class="chart-card-hd"><h3>数据指标</h3><div class="btns" id="metricType"><div class="btns-btn on" data-v="pv">PV</div><div class="btns-btn" data-v="uv">UV</div><div class="btns-btn" data-v="ip">IP</div><div class="btns-btn" data-v="traffic">流量</div></div></div>
+            <div class="chart-card-bd"><div class="chart-box" id="sevenChart"></div></div>
+          </div>
+        </div>
+
+        <!-- ====== Spider ====== -->
+        <div class="pp" id="pp-spider">
+          <div class="pg-hd"><div class="pg-hd-l"><span class="pg-tip">爬虫请求统计数据，基于 User-Agent 识别</span></div></div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>蜘蛛名称</th><th style="text-align:center;width:14%;">请求数</th><th style="text-align:center;">占比</th></tr></thead><tbody id="ssSpiderBody"><tr><td colspan="3" class="empty">请先选择站点</td></tr></tbody></table></div>
+          <div class="pg-note">* 蜘蛛识别基于常见爬虫 User-Agent 规则匹配，部分非标准爬虫可能未被识别。统计仅记录匹配到的爬虫请求，不影响站点正常访问性能。</div>
+          <div class="pager" id="ssSpiderPager" style="display:none"></div>
+        </div>
+
+        <!-- ====== Client ====== -->
+        <div class="pp" id="pp-client">
+          <div class="pg-hd"><div class="pg-hd-l"><span class="pg-tip">浏览器 & 设备类型分布统计</span></div></div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>客户端类型</th><th style="text-align:center;width:14%;">请求数</th><th style="text-align:center;">占比</th></tr></thead><tbody id="ssClientBody"><tr><td colspan="3" class="empty">请先选择站点</td></tr></tbody></table></div>
+          <div class="pg-note">* 客户端识别基于浏览器 User-Agent 字符串解析，区分 PC/移动端及主流浏览器。统计过程消耗少量 CPU 资源。</div>
+          <div class="pager" id="ssClientPager" style="display:none"></div>
+        </div>
+
+        <!-- ====== Method ====== -->
+        <div class="pp" id="pp-method">
+          <div class="pg-hd"><div class="pg-hd-l"><span class="pg-tip">HTTP 请求方式统计（GET / POST / HEAD 等）</span></div></div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>请求方式</th><th style="text-align:center;width:14%;">请求数</th><th style="text-align:center;">占比</th></tr></thead><tbody id="ssMethodBody"><tr><td colspan="3" class="empty">请先选择站点</td></tr></tbody></table></div>
+          <div class="pg-note">* 统计来源于 Nginx 日志中的请求方法字段。覆盖 GET / POST / HEAD / PUT / DELETE / OPTIONS 等标准 HTTP 方法。</div>
+          <div class="pager" id="ssMethodPager" style="display:none"></div>
+        </div>
+
+        <!-- ====== IP Rank ====== -->
+        <div class="pp" id="pp-iprank">
+          <div class="pg-hd">
+            <div class="pg-hd-l"><span class="pg-tip">已开通 IP 精准数据包</span></div>
+            <div class="pg-hd-r">
+              <label class="pg-switch"><input type="checkbox" checked onchange="MNBT._toggleSwitch(this)"> 全局 IP 统计</label>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:5%;">#</th><th>IP</th><th style="width:12%;">归属地</th><th style="width:10%;">运营商</th><th style="text-align:center;width:12%;">请求数</th><th style="text-align:center;width:12%;">流量</th><th style="text-align:center;">流量占比图</th></tr></thead><tbody id="ssIpRankBody"><tr><td colspan="7" class="empty">请先选择站点</td></tr></tbody></table></div>
+          <div class="pg-note">* IP 归属地数据来自离线 GeoIP 库，精确度约 95%。开启全局 IP 统计会略微增加日志解析耗时，建议在访问高峰期谨慎使用。如需关闭，请点击右上角开关。</div>
+          <div class="pager" id="ssIpPager" style="display:none"></div>
+        </div>
+
+        <!-- ====== URI Rank ====== -->
+        <div class="pp" id="pp-urirank">
+          <div class="pg-hd">
+            <div class="pg-hd-l"><span class="pg-tip">URI 访问频率排行</span></div>
+            <div class="pg-hd-r">
+              <label class="pg-switch"><input type="checkbox" checked onchange="MNBT._toggleSwitch(this)"> 全局 URI 统计</label>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:5%;">#</th><th>URI</th><th style="text-align:center;width:14%;">请求数</th><th style="text-align:center;width:14%;">流量</th><th style="text-align:center;">流量占比图</th></tr></thead><tbody id="ssUriRankBody"><tr><td colspan="5" class="empty">请先选择站点</td></tr></tbody></table></div>
+          <div class="pg-note">* URI 流量统计需要解析每条访问日志的请求路径和响应大小，高流量站点建议按需开启。统计精度受日志格式影响，自定义日志格式可能需要调整解析规则。</div>
+          <div class="pager" id="ssUriPager" style="display:none"></div>
+        </div>
+
+        <!-- ====== Errors ====== -->
+        <div class="pp" id="pp-errors">
+          <div class="pg-hd">
+            <div class="pg-hd-l" style="gap:8px;">
+              <span class="pg-tip">状态码筛选</span>
+              <select id="ssErrFilter" onchange="MNBT._loadTable('errors',1)" style="font-size:11px;padding:4px 24px 4px 8px;min-width:auto;width:auto;"><option value="400">>= 400 全部错误</option><option value="500">>= 500 服务端错误</option></select>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:15%;">时间</th><th style="width:11%;">IP</th><th style="width:7%;">方法</th><th>URI</th><th style="text-align:center;width:9%;">状态码</th><th style="text-align:center;width:9%;">字节</th></tr></thead><tbody id="ssErrorBody"><tr><td colspan="6" class="empty">请先选择站点</td></tr></tbody></table></div>
+          <div class="pg-note">* 4xx 状态码表示客户端请求错误，5xx 表示服务端处理异常。错误统计有助于排查站点问题。仅记录状态码 >= 400 的请求。</div>
+          <div class="pager" id="ssErrorPager" style="display:none"></div>
+        </div>
+
+        <!-- ====== Recent Logs ====== -->
+        <div class="pp" id="pp-recent">
+          <div class="pg-hd"><div class="pg-hd-l"><span class="pg-tip">实时 Nginx 访问日志</span></div></div>
+          <pre class="log-box" id="ssRecentLog" style="max-height:560px;">请先选择站点</pre>
+          <div class="pg-note">* 日志来自 Nginx 访问日志文件，默认保留最近 30 天。日志文件过大时读取可能较慢，建议定期清理过期日志。</div>
+          <div class="pager" id="ssRecentPager" style="display:none"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+var PAGES=['overview','spider','client','method','iprank','urirank','errors','recent'];
+var PAGERS=['ssSpiderPager','ssClientPager','ssMethodPager','ssIpPager','ssUriPager','ssErrorPager','ssRecentPager'];
+
+var F={
+  bytes:function(n){if(!n||n==='0')return'0 B';var v=typeof n==='string'?parseFloat(n):n;if(isNaN(v)||v<0)return'0 B';var u=['B','KB','MB','GB','TB'],i=0;while(v>=1024&&i<u.length-1){v/=1024;i++;}return v.toFixed(i>0?1:0)+' '+u[i];},
+  num:function(n){n=Number(n);return isNaN(n)?'0':n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');},
+  pct:function(v,t){return t?(v/t*100).toFixed(1)+'%':'0%';}
+};
+
+$('#mnbtSidebar .sidebar-item').click(function(){
+  var id=$(this).data('panel');
+  $(this).addClass('active').siblings().removeClass('active');
+  $('.main>.p-ov,.main>.p-config,.main>.p-logs,.main>.p-stats,.main>.p-cc').hide();
+  $('#'+id).show();
+  if(id==='p-config')MNBT.loadConfig();
+  else if(id==='p-logs')MNBT.loadLogs();
+  else if(id==='p-stats'){MNBT.loadSiteList();$('#ssSiteSelect').data('ready',1);}
+});
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+window.MNBT={
+  curPage:'overview', pageSize:10, site:'', range:'7d',
+  metricType:'pv',
+  sevenChart:null, cache:null,
+
+  status:function(){
+    $.post('/plugin?action=a&name=mnbt_connector&s=get_status',{},function(r){
+      var b=document.getElementById('mnbtStatusBadge');b.style.display='inline';b.className='badge '+(r.running?'badge-success':'badge-danger');b.innerText=r.running?'运行中':'已停止';
+      document.getElementById('mnbtCardRunning').innerHTML='<span class="dot '+(r.running?'online':'offline')+'"></span>'+(r.running?'运行中':'已停止');
+      document.getElementById('mnbtCardNodeId').textContent=r.node_id||'未配置';
+      document.getElementById('mnbtCardPid').innerHTML=r.pid||'-';document.getElementById('mnbtCardPidSub').textContent=r.pid?'运行中':'未运行';
+      document.getElementById('mnbtCardVersion').textContent=r.version||'-';
+      var vb=document.getElementById('mnbtVersionBadge');if(r.version)vb.textContent='v'+r.version;
+    },'json').fail(function(){document.getElementById('mnbtCardRunning').innerHTML='<span style="color:var(--red)">连接失败</span>';});
+  },
+  start:function(){$.post('/plugin?action=a&name=mnbt_connector&s=start',{},function(r){layer.msg(r.msg,{icon:r.status?1:2});if(r.status)setTimeout(MNBT.status,1e3);},'json');},
+  stop:function(){$.post('/plugin?action=a&name=mnbt_connector&s=stop',{},function(r){layer.msg(r.msg,{icon:r.status?1:2});if(r.status)setTimeout(MNBT.status,1e3);},'json');},
+  runOnce:function(){$.post('/plugin?action=a&name=mnbt_connector&s=run_once',{},function(r){layer.msg(r.status?'执行成功':'执行失败：'+r.msg,{icon:r.status?1:2});if(r.status){setTimeout(MNBT.status,1500);setTimeout(MNBT.loadLogs,1500);}},'json');},
+
+  loadConfig:function(){
+    $.post('/plugin?action=a&name=mnbt_connector&s=get_config_info',{},function(r){
+      if(!r||!r.status){document.getElementById('mnbtConfigInfo').textContent=r&&r.msg?r.msg:'读取配置失败';return;}
+      var c=r.config||{};
+      document.getElementById('mnbtConfigPath').textContent=r.config_path||'-';
+      document.getElementById('mnbtConfigNodeId').textContent=c.node_id||'-';
+      document.getElementById('mnbtConfigInterval').textContent=(c.interval_seconds||'-')+' 秒';
+      var caps=Array.isArray(c.capabilities)?c.capabilities:[];
+      document.getElementById('mnbtConfigInfo').innerHTML='主控地址：<strong>'+esc(c.mnbt_url||'-')+'</strong><br>节点名称：<strong>'+esc(c.node_name||'-')+'</strong><br>版本：<strong>'+esc(c.version||'-')+'</strong><br>能力列表：'+(caps.length?caps.map(function(x){return'<span class="tag">'+esc(x)+'</span>';}).join(''):'-');
+      document.getElementById('mnbtConfigJson').textContent=r.config_json||'{}';
+    },'json').fail(function(){document.getElementById('mnbtConfigInfo').textContent='读取配置失败';});
+  },
+  loadLogs:function(){
+    $.post('/plugin?action=a&name=mnbt_connector&s=get_logs',{max_bytes:50000},function(r){
+      if(!r||!r.status){document.getElementById('mnbtConnectorLog').textContent=r&&r.msg?r.msg:'读取日志失败';return;}
+      document.getElementById('mnbtLogPath').textContent=r.log_path||'-';
+      document.getElementById('mnbtLogSize').textContent=F.bytes(r.log_size||0);
+      document.getElementById('mnbtLogMtime').textContent=r.log_mtime||'-';
+      document.getElementById('mnbtLogRunning').innerHTML='<span class="dot '+(r.running?'online':'offline')+'"></span>'+(r.running?'运行中 PID '+(r.pid||'-'):'未运行');
+      var l=document.getElementById('mnbtConnectorLog');l.textContent=r.log_text||'暂无日志';
+      if(document.getElementById('mnbtAutoScroll').checked)l.scrollTop=l.scrollHeight;
+    },'json').fail(function(){document.getElementById('mnbtConnectorLog').textContent='读取日志失败';});
+  },
+
+  loadSiteList:function(){
+    $.post('/plugin?action=a&name=mnbt_connector&s=get_site_list',{},function(r){
+      var s=document.getElementById('ssSiteSelect'),h='<option value="">-- 选择站点 --</option>',first='';
+      if(Array.isArray(r.data)&&r.data.length){
+        r.data.forEach(function(x){
+          var n=typeof x==='string'?x:(x.site_name||x.name||'');
+          if(!n)return;
+          if(!first)first=n;
+          h+='<option value="'+esc(n)+'">'+esc(n)+'</option>';
+        });
+      }
+      s.innerHTML=h;
+      // 保留当前选中的站点；首次进入时才默认选中第一个站点
+      var keep=MNBT.site&&Array.prototype.some.call(s.options,function(o){return o.value===MNBT.site;});
+      if(keep){s.value=MNBT.site;}
+      else if(first){s.value=first;MNBT.site=first;MNBT.reload();}
+      else{MNBT.site='';}
+    },'json');
+  },
+
+  _toggleSwitch:function(el){layer.msg(el.checked?'已开启':'已关闭',{time:1200});},
+
+  reload:function(){
+    var site=document.getElementById('ssSiteSelect').value;
+    if(!site){document.getElementById('ssSkel').classList.remove('show');document.getElementById('ssContent').style.display='none';return;}
+    MNBT.site=site; MNBT.range=MNBT._getRange();
+    document.getElementById('ssSkel').classList.add('show');document.getElementById('ssContent').style.display='none';
+    $.post('/plugin?action=a&name=mnbt_connector&s=get_site_overview',{site:site,range:MNBT.range},function(r){
+      MNBT.cache=r;
+      // 先显示容器，再初始化图表，否则 ECharts 在隐藏容器中无法获取尺寸
+      document.getElementById('ssSkel').classList.remove('show');document.getElementById('ssContent').style.display='block';
+      if(MNBT.curPage==='overview'){
+        MNBT._cards(r.data||{},r.comparison||{});
+        MNBT._initCharts(function(){
+          var sd=document.getElementById('sevenChart');
+          if(MNBT.sevenChart)MNBT.sevenChart.dispose();
+          MNBT.sevenChart=window.echarts.init(sd);
+          MNBT._loadTrendData();
+        });
+      }else{
+        MNBT._loadTable(MNBT.curPage,1);
+      }
+    },'json').fail(function(){document.getElementById('ssSkel').classList.remove('show');document.getElementById('ssContent').style.display='block';});
+  },
+  _getRange:function(){var a=document.querySelector('#rangeBtns .btns-btn.on');return a?a.getAttribute('data-v'):'7d';},
+
+  switchPage:function(name,el){
+    $('#subNav .btns-btn').removeClass('on');if(el)el.classList.add('on');
+    MNBT.curPage=name;
+    PAGERS.forEach(function(id){var p=document.getElementById(id);if(p)p.style.display='none';});
+    $('.pp').removeClass('active');
+    $('#pp-'+name).addClass('active');
+    if(!MNBT.site)return;
+    if(name==='overview'){
+      // 切回概览时重新请求（避免缓存与当前时间范围不同步）
+      var self=this;
+      $.post('/plugin?action=a&name=mnbt_connector&s=get_site_overview',{site:MNBT.site,range:MNBT.range},function(r){
+        if(!r||!r.status)return;
+        MNBT.cache=r;
+        MNBT._cards(r.data||{},r.comparison||{});
+        MNBT._initCharts(function(){
+          var sd=document.getElementById('sevenChart');
+          if(MNBT.sevenChart)MNBT.sevenChart.dispose();
+          MNBT.sevenChart=window.echarts.init(sd);
+          MNBT._loadTrendData();
+        });
+      },'json');
+    }else{
+      MNBT._loadTable(name,1);
+    }
+  },
+
+  _cards:function(d,c){
+    var fields=[
+      {k:'total_bytes',l:'流量',f:F.bytes},{k:'requests',l:'请求数',f:F.num},
+      {k:'ip_count',l:'IP',f:F.num},{k:'uv',l:'UV',f:F.num},
+      {k:'pv',l:'PV',f:F.num},{k:'error_count',l:'错误请求',f:F.num},
+      {k:'spider_count',l:'蜘蛛请求',f:F.num}
+    ];
+    var h='';
+    fields.forEach(function(f){
+      var v=d[f.k]!=null?f.f(d[f.k]):'-',comp='';
+      if(c&&c.prev){
+        var pv=c.prev[f.k]||0,cv=d[f.k]||0,cls='neutral';
+        if(cv>pv)cls='up';else if(cv<pv)cls='down';
+        comp='<span class="'+cls+'">昨日 '+f.f(pv)+'</span>';
+        if(c.prev2)comp+='<br>前日 '+f.f(c.prev2[f.k]||0);
+      }
+      h+='<div class="stat-card"><div class="stat-label"><span class="dot breath"></span>'+f.l+'</div><div class="stat-val">'+v+'</div><div class="stat-comp">'+comp+'</div></div>';
+    });
+    h+='<div class="stat-rf"><a href="javascript:;" onclick="MNBT.reload()" style="font-size:12px;color:var(--green);text-decoration:none;">刷新</a></div>';
+    document.getElementById('ssStatsCards').innerHTML=h;
+  },
+
+  _initCharts:function(cb){if(window.echarts){cb();return;}$.ajax({url:'/static/js/echarts.min.js',dataType:'script',cache:true}).done(cb);},
+  // 重新渲染趋势图表
+  _renderTrend:function(data){
+    var self=MNBT,list=(data||[]).sort(function(a,b){return a.time>b.time?1:-1;}),isT=self.metricType==='traffic';
+    var map={traffic:'流量',pv:'PV',uv:'UV',ip:'IP'};
+    var vals=list.map(function(d){
+      var v=d[self.metricType]!==undefined?d[self.metricType]:(d.pv||0);
+      if(self.metricType==='traffic')v=v||d.total_bytes||0;
+      return v;
+    });
+    self.sevenChart.setOption({
+      tooltip:{trigger:'axis',formatter:function(p){var d=p[0];return d.name+'<br/>'+d.seriesName+': '+(isT?F.bytes(d.value):F.num(d.value));}},
+      grid:{left:'3%',right:'5%',top:'8%',bottom:'3%',containLabel:true},
+      xAxis:{type:'category',data:list.map(function(d){return d.time||'';}),axisLabel:{color:'#888',fontSize:10,rotate:45}},
+      yAxis:{type:'value',axisLabel:{formatter:function(v){return isT?F.bytes(v):F.num(v);},color:'#888',fontSize:11}},
+      series:[{name:map[self.metricType]||self.metricType,type:'line',smooth:true,symbol:'circle',symbolSize:8,itemStyle:{color:'#36b370'},lineStyle:{color:'#36b370',width:3},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(54,179,112,0.25)'},{offset:1,color:'rgba(54,179,112,0.02)'}])},data:vals,label:{show:false}}]
+    });
+  },
+  _loadTrendData:function(){
+    $.post('/plugin?action=a&name=mnbt_connector&s=get_site_trend',{site:MNBT.site,range:MNBT.range,page:1,page_size:1000},function(r){
+      MNBT._renderTrend(r.data||[]);
+    },'json');
+  },
+
+  // Unified table loader
+  _tableCfgs:{
+    spider:{url:'/plugin?action=a&name=mnbt_connector&s=get_site_spider_analysis',bodyId:'ssSpiderBody',pagerId:'ssSpiderPager',rowFn:function(r,i,t){var pct=F.pct(r.count,t);return'<tr><td>'+esc(r.spider||'-')+'</td><td style="text-align:center;">'+F.num(r.count||0)+'</td><td style="text-align:center;">'+pct+'<div class="bar-wrap"><div class="bar" style="width:'+Math.min(parseFloat(pct),100)+'%"></div></div></td></tr>';}},
+    client:{url:'/plugin?action=a&name=mnbt_connector&s=get_site_client_stats',bodyId:'ssClientBody',pagerId:'ssClientPager',rowFn:function(r,i,t){var pct=F.pct(r.count,t);return'<tr><td>'+esc(r.client||r.os||'-')+'</td><td style="text-align:center;">'+F.num(r.count||0)+'</td><td style="text-align:center;">'+pct+'<div class="bar-wrap"><div class="bar" style="width:'+Math.min(parseFloat(pct),100)+'%"></div></div></td></tr>';}},
+    method:{url:'/plugin?action=a&name=mnbt_connector&s=get_site_method_stats',bodyId:'ssMethodBody',pagerId:'ssMethodPager',rowFn:function(r,i,t){var pct=F.pct(r.count,t);return'<tr><td>'+esc(r.method||'-')+'</td><td style="text-align:center;">'+F.num(r.count||0)+'</td><td style="text-align:center;">'+pct+'<div class="bar-wrap"><div class="bar" style="width:'+Math.min(parseFloat(pct),100)+'%"></div></div></td></tr>';}},
+    iprank:{url:'/plugin?action=a&name=mnbt_connector&s=get_site_ip_rank',bodyId:'ssIpRankBody',pagerId:'ssIpPager',rowFn:function(r,i,t,res){var pg=res.page||1,ps=res.page_size||MNBT.pageSize,sr=(pg-1)*ps+i+1,pct=F.pct(r.count,t);return'<tr><td>'+sr+'</td><td style="font-family:monospace;">'+esc(r.ip||'-')+'</td><td style="color:var(--t3);font-size:11px;">-</td><td style="color:var(--t3);font-size:11px;">-</td><td style="text-align:center;">'+F.num(r.count||0)+'</td><td style="text-align:center;">'+F.bytes(r.bytes||0)+'</td><td style="text-align:center;">'+pct+'<div class="bar-wrap"><div class="bar" style="width:'+Math.min(parseFloat(pct),100)+'%"></div></div></td></tr>';}},
+    urirank:{url:'/plugin?action=a&name=mnbt_connector&s=get_site_uri_rank',bodyId:'ssUriRankBody',pagerId:'ssUriPager',rowFn:function(r,i,t,res){var pg=res.page||1,ps=res.page_size||MNBT.pageSize,sr=(pg-1)*ps+i+1,pct=F.pct(r.count,t);return'<tr><td>'+sr+'</td><td style="word-break:break-all;font-family:monospace;font-size:11px;">'+esc(r.uri||'-')+'</td><td style="text-align:center;">'+F.num(r.count||0)+'</td><td style="text-align:center;">'+F.bytes(r.bytes||0)+'</td><td style="text-align:center;">'+pct+'<div class="bar-wrap"><div class="bar" style="width:'+Math.min(parseFloat(pct),100)+'%"></div></div></td></tr>';}},
+    errors:{url:'/plugin?action=a&name=mnbt_connector&s=get_site_error_logs',bodyId:'ssErrorBody',pagerId:'ssErrorPager',rowFn:function(r){var bc=r.status>=500?'badge-danger':'badge-warning';return'<tr><td style="font-size:11px;">'+esc(r.time||'-')+'</td><td style="font-family:monospace;font-size:11px;">'+esc(r.ip||'-')+'</td><td>'+esc(r.method||'-')+'</td><td style="word-break:break-all;font-size:11px;">'+esc(r.uri||'-')+'</td><td style="text-align:center;"><span class="badge '+bc+'">'+(r.status||'-')+'</span></td><td style="text-align:center;">'+F.bytes(r.bytes||0)+'</td></tr>';}},
+    recent:{custom:function(p){p=p||1;$.post('/plugin?action=a&name=mnbt_connector&s=get_site_recent_logs',{site:MNBT.site,page:p,page_size:MNBT.pageSize},function(r){var b=document.getElementById('ssRecentLog');if(!r||r.status===false){b.textContent=r&&r.msg?r.msg:'读取日志失败';document.getElementById('ssRecentPager').style.display='none';return;}if(!r.data||!r.data.length){b.textContent='暂无日志';document.getElementById('ssRecentPager').style.display='none';return;}var pg=parseInt(r.page)||p,ps=parseInt(r.page_size)||MNBT.pageSize,totalAll=parseInt(r.total)||r.data.length,data=r.data;if(totalAll>ps&&data.length>ps){var offset=(pg-1)*ps;data=data.slice(offset,offset+ps);}b.textContent=data.map(function(x){if(typeof x==='string')return x;if(x.raw)return x.raw;return'['+(x.time||'')+'] '+(x.ip||'')+' '+(x.method||'')+' '+(x.uri||'')+' '+(x.status||'')+' '+F.bytes(x.bytes||0)+' "'+(x.ua||'')+'"';}).join('\n');MNBT._pager('ssRecentPager',totalAll,pg,ps);},'json');}}
+  },
+  _loadTable:function(name,p){
+    p=p||1;
+    var cfg=MNBT._tableCfgs[name];if(!cfg)return;
+    if(cfg.custom){cfg.custom(p);return;}
+    var extra={};
+    if(name==='errors'){var fs=document.getElementById('ssErrFilter');if(fs)extra.min_status=parseInt(fs.value)||400;}
+    // 确保 page 和 page_size 以整数形式发送
+    var reqData = $.extend({}, {site:MNBT.site, range:MNBT.range}, extra);
+    reqData.page = p;
+    reqData.page_size = MNBT.pageSize;
+
+    $.post(cfg.url, reqData, function(r){
+      var b=document.getElementById(cfg.bodyId);
+      if(!r||r.status===false){b.innerHTML='<tr><td colspan="99" class="empty">'+esc(r&&r.msg?r.msg:'接口请求失败')+'</td></tr>';document.getElementById(cfg.pagerId).style.display='none';return;}
+      if(r.data&&!Array.isArray(r.data)){
+        if(r.data.pc||r.data.mobile){
+          var arr=[];
+          ['pc','mobile'].forEach(function(type){var g=r.data[type]||{},list=g.browsers||[];list.forEach(function(x){arr.push({client:(x.name||x.browser||'-')+'('+type+')',os:x.name||x.browser||'-',count:x.count||x.total||0});});});
+          r.sum_count=(r.data.pc&&r.data.pc.total||0)+(r.data.mobile&&r.data.mobile.total||0);r.data=arr;
+        }else r.data=[];
+      }
+      if(!r.data||!r.data.length){b.innerHTML='<tr><td colspan="99" class="empty">'+esc(r.msg||'暂无数据')+'</td></tr>';document.getElementById(cfg.pagerId).style.display='none';return;}
+      // 确保分页生效：若后端返回全量，前端切片
+      var pageFromResp = parseInt(r.page) || p;
+      var psFromResp = parseInt(r.page_size) || MNBT.pageSize;
+      var totalFromResp = parseInt(r.total) || r.data.length;
+      var displayData = r.data;
+      // 如果 total 大于 page_size 但返回了全部数据，前端切片
+      if (totalFromResp > psFromResp && r.data.length > psFromResp) {
+        var offset = (pageFromResp - 1) * psFromResp;
+        displayData = r.data.slice(offset, offset + psFromResp);
+      }
+      var totalFromAll = parseFloat(r.sum_count)||r.data.reduce(function(s,x){return s+(x.count||0);},0);
+      b.innerHTML = displayData.map(function(x,i){return cfg.rowFn(x,i,totalFromAll,r);}).join('');
+      MNBT._pager(cfg.pagerId, totalFromResp, pageFromResp, psFromResp);
+    },'json');
+  },
+
+  _pager:function(id,total,page,ps){
+    var el=document.getElementById(id);if(!el)return;
+    var tp=Math.ceil(total/ps);
+    if(tp<=1){el.style.display='none';return;}
+    el.style.display='flex';
+    var fn='MNBT._loadTable(\''+MNBT.curPage+'\',';
+    var h='<button class="pager-btn"'+(page<=1?' disabled':' onclick="'+fn+(page-1)+')"')+'>‹</button>';
+    var ms=7,hf=Math.floor(ms/2),s=Math.max(1,page-hf),e=Math.min(tp,s+ms-1);
+    if(e-s<ms-1)s=Math.max(1,e-ms+1);
+    if(s>1)h+='<button class="pager-btn" onclick="'+fn+'1)">1</button>';
+    if(s>2)h+='<span class="pager-info">…</span>';
+    for(var i=s;i<=e;i++)h+='<button class="pager-btn'+(i===page?' on':'')+'" onclick="'+fn+i+')">'+i+'</button>';
+    if(e<tp-1)h+='<span class="pager-info">…</span>';
+    if(e<tp)h+='<button class="pager-btn" onclick="'+fn+tp+')">'+tp+'</button>';
+    h+='<button class="pager-btn"'+(page>=tp?' disabled':' onclick="'+fn+(page+1)+')"')+'>›</button>';
+    h+='<span class="pager-info">共 '+total+' 条</span>';
+    h+='<input type="number" min="1" max="'+tp+'" id="'+id+'Jump" value="'+page+'">';
+    h+='<span class="pager-info">/ '+tp+' 页</span>';
+    h+='<button class="pager-go" onclick="var v=parseInt(document.getElementById(\''+id+'Jump\').value)||1;if(v>=1&&v<='+tp+')'+fn+'v)">跳转</button>';
+    el.innerHTML=h;
+  }
+};
+
+$(function(){
+  $(document).on('click','#rangeBtns .btns-btn',function(){var v=$(this).data('v');$('#rangeBtns .btns-btn').removeClass('on');$(this).addClass('on');MNBT.range=v;if(MNBT.site)MNBT.reload();});
+  $(document).on('click','#metricType .btns-btn',function(){var v=$(this).data('v');$('#metricType .btns-btn').removeClass('on');$(this).addClass('on');MNBT.metricType=v;if(MNBT.sevenChart)MNBT._loadTrendData();});
+  $('select[id="ssPageSize"]').on('change',function(){MNBT.pageSize=parseInt(this.value)||10;PAGERS.forEach(function(id){var p=document.getElementById(id);if(p)p.style.display='none';});MNBT._loadTable(MNBT.curPage,1);});
+
+  $(document).on('click','#mnbtLogAutoRefresh',function(){if(this.checked)MNBT.loadLogs();});
+  setInterval(function(){var el=document.getElementById('mnbtLogAutoRefresh');if(el&&el.checked)MNBT.loadLogs();},5000);
+
+  $(".layui-layer-page").css({width:"1000px",height:"820px",top:($(window).height()-820)/2+"px"});
+  MNBT.status();setInterval(MNBT.status,30000);
+  $(window).resize(function(){if(MNBT.sevenChart)MNBT.sevenChart.resize();});
+});
+})();
+</script>
+</body>
+</html>
