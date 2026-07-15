@@ -1,8 +1,9 @@
 <?php
-include("./MPHX/common.php");
+include("../MPHX/common.php");
+include("./class.php");
 @header('Content-Type: text/html; charset=UTF-8');
 
-require './mail/vendor/autoload.php';
+require '../mail/vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 
 function sendEmail($to, $subject, $message) {
